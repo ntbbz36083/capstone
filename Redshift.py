@@ -114,34 +114,40 @@ def main():
     print(roleArn)
     
     print("1.4 Creating Cluster")
-    Create_Cluster(redshift, DWH_CLUSTER_TYPE, DWH_NODE_TYPE, DWH_NUM_NODES, DWH_DB, DWH_CLUSTER_IDENTIFIER, DWH_DB_USER, DWH_DB_PASSWORD, roleArn)
-    myClusterProps = redshift.describe_clusters(ClusterIdentifier=DWH_CLUSTER_IDENTIFIER)['Clusters'][0]
-    cluster_status = prettyRedshiftProps(myClusterProps)
+
+    data = [['tom', 10], ['nick', 15], ['juli', 14]]
+    cluster_status = pd.DataFrame(data, columns = ['Name', 'Age']) 
     if cluster_status.iloc[2,1] =='available':
-        print('Cluster is available now!')
-        DWH_ENDPOINT = myClusterProps['Endpoint']['Address']
-        DWH_ROLE_ARN = myClusterProps['IamRoles'][0]['IamRoleArn']
-        print("DWH_ENDPOINT :: ", DWH_ENDPOINT)
-        print("DWH_ROLE_ARN :: ", roleArn)
-    else:    
-        flag = True
-        i= 0
-        while flag:
-            myClusterProps = redshift.describe_clusters(ClusterIdentifier=DWH_CLUSTER_IDENTIFIER)['Clusters'][0]
-            cluster_status = prettyRedshiftProps(myClusterProps)
-            if cluster_status.iloc[2,1] =='creating':
-                print('We are still working on creating the cluster, approximate {}/20 done!'.format(i))
-                i += 1
-                time.sleep(30)
-            else:
-                flag = False
-                print('cluster is available!')    
-        DWH_ENDPOINT = myClusterProps['Endpoint']['Address']
-        DWH_ROLE_ARN = myClusterProps['IamRoles'][0]['IamRoleArn']
-        print("DWH_ENDPOINT :: ", DWH_ENDPOINT)
-        print("DWH_ROLE_ARN :: ", roleArn)
-    
-    
+        pass
+    else:
+        Create_Cluster(redshift, DWH_CLUSTER_TYPE, DWH_NODE_TYPE, DWH_NUM_NODES, DWH_DB, DWH_CLUSTER_IDENTIFIER, DWH_DB_USER, DWH_DB_PASSWORD, roleArn)
+        myClusterProps = redshift.describe_clusters(ClusterIdentifier=DWH_CLUSTER_IDENTIFIER)['Clusters'][0]
+        cluster_status = prettyRedshiftProps(myClusterProps)
+        if cluster_status.iloc[2,1] =='available':
+            print('Cluster is available now!')
+            DWH_ENDPOINT = myClusterProps['Endpoint']['Address']
+            DWH_ROLE_ARN = myClusterProps['IamRoles'][0]['IamRoleArn']
+            print("DWH_ENDPOINT :: ", DWH_ENDPOINT)
+            print("DWH_ROLE_ARN :: ", roleArn)
+        else:    
+            flag = True
+            i= 0
+            while flag:
+                myClusterProps = redshift.describe_clusters(ClusterIdentifier=DWH_CLUSTER_IDENTIFIER)['Clusters'][0]
+                cluster_status = prettyRedshiftProps(myClusterProps)
+                if cluster_status.iloc[2,1] =='creating':
+                    print('We are still working on creating the cluster, approximate {}/20 done!'.format(i))
+                    i += 1
+                    time.sleep(30)
+                else:
+                    flag = False
+                    print('cluster is available!')    
+                    DWH_ENDPOINT = myClusterProps['Endpoint']['Address']
+                    DWH_ROLE_ARN = myClusterProps['IamRoles'][0]['IamRoleArn']
+                    print("DWH_ENDPOINT :: ", DWH_ENDPOINT)
+                    print("DWH_ROLE_ARN :: ", roleArn)
+
+
     try:
         vpc = ec2.Vpc(id=myClusterProps['VpcId'])
         defaultSg = list(vpc.security_groups.all())[0]
