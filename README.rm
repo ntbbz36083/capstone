@@ -9,42 +9,90 @@ Step 1: Scope the Project and Gather Dat
 Project summary
 1. Introduction
 
-A loan company, IB, has grown their user base and song database and want to move their processes and data onto the cloud. Their data resides in S3, in a directory of CSV on the transcation history of the users.
+A loan company, IB, wants to move their processes and data pipeline onto the cloud. Their data resides in S3, in a directory of CSV on the transcation history of the loans. 
 
 In this project, we will build an ETL pipeline that extracts data from S3, processes and clean them using Spark, and loads the data back into S3 as a set of dimensional tables in parquet format. Then, create cluster with redshift and load data into redshift. This will allow our analytics team to continue finding insights of our loan users.
 
 2. File Description 
 In this repository, you will see Test.ipynb, csp.cfg, etl.py, README.md.
 Test.ipynb: this provides a script that you can use to run this project.
-csp.cfg: a basic config file, includes all the basic configuration.
+dwh.cfg: a basic config file, includes all the basic configuration.
 etl.py: this is the script that will load data from s3 via spark and save them back to s3.
 README.md: a description of this project.
 
 3. Project Description
-The data lake we created for this project has 5 tables: 1 fact table and 4 dimension tables
+The data lake we created for this project has 6 tables: 1 fact table and 5 dimension tables
 Fact table: 
-songplays - records in event data associated with song plays i.e. records with page NextSong, columns have songplay_id, start_time, user_id, level, song_id, artist_id, session_id, location, user_agent
+transaction - records in transactions, columns have Loan_Number, Time_Id, Country_Id, Guarantor_Country_Id, Loan_Type, Loan_Status_Id, Amount_Id, End_of_Period, Interest_Rate, Project_ID, Exchange_Adjustment, Borrowers_Obligation, Cancelled_Amount,Undisbursed_Amount, Disbursed_Amount, Repaid_to_IBRD, Due_to_IBRD, l.Loans_Held
 Dimension tables: 
-users - users in the app, columns have userId, firstName, lastName, gender, level
-songs - songs in music database, columns have song_id, title, artist_id, year, duration
-artists - artists in music database, columns have artist_id, name, location, lattitude, longitude
-time - columns have timestamps of records in songplays broken down into specific units, start_time, hour, day, week, month, year, weekday
+country - country that has loan or as a Guarantor in the transaction history, columns have Country_Id, Country_Code, Country, Region
+loan_status - loan status in transaction history, columns have song_id, title, artist_id, year, duration
+loan_type - loan type in transaction history, columns have artist_id, name, location, lattitude, longitude
+amount - different amounts in transaction history, columns have Amount_Id, Original_Principal_Amount, Sold_3rd_Party, Repaid_3rd_Party, Due_3rd_Party
+time - columns have timestamps of records in transaction history, columns have Time_Id, First_Repayment_Date, Last_Repayment_Date, Agreement_Signing_Date
 
 4. ETL Pipeline 
-For the ETL pipeline, there are 3 phrases:
-A.Loading data from s3 into our data lake.
-B.Creating tables with spark.
-C.Saving parquet file back to s3. 
+For the ETL pipeline, there are 6 phrases:
+A.Loading data from S3 into our data lake.
+B.Creating and cleaning data with spark.
+C.Saving parquet file back to S3. 
+D.Create Redshift on AWS with script.
+E.Load data into redshift from S3.
+F.Create tables with proper data type and load data into tables.
 
 To start review this project, please open and run Test.ipynb step by step.
 
-1. First of all, we will load all libaries we need and create a spark session with create_spark_session() function. Then, we load log file and song file into our session. 
-2. With spark, we create dataframes with select statements and apply some data manipulation with data.
-3. After all above, we save the data to s3 and complete our job. 
+A.Loading data from S3 into our data lake
+We will load data from S3 and explore the data with .show(), printschema(), describe() functions. By exploring data, we can find that column name has space inside and inside the string column, there are upper case and lower case, which may cause comparing issue when comparing string data. To prevent these potenial issue, we remove the space in column name and uppercase everything of data.
+
+B.Creating and cleaning data with spark.
+1. First of all, we will load all libaries we need and create a spark session with create_spark_session() function. Then, we load log file into our session. 
+2. With spark, we create dataframes with select statements and apply some data cleaning and manipulation with data.
+a. Droping columns have too null value
+By running below command, we will see how many null values each column has:
+df.select(*(sum(col(c).isNull().cast("int")).alias(c) for c in df.columns)).toPandas()
+We will find, Last_Disbursement_Date and Currency_of_Commitment both have more than 40% null value,  so we drop them.
+If we look into Borrower and Project_Name, we will find there are a lot of bad data, like "?@", and for same borrower, we will find they have different names. Not real name, but name with these "?" mark, in which I think it comes from spanish and while system loading these files, they can't be recoginized.
+
+b.Fixing Loan number
+For loan number, in the data dictnory, it should be a 9 digits number, in format XXXX12345. However, looking at the data, we will find we have bad data like XXXX12, XXXX123 and XXXX1234, which is missing "0" in the middle. So we will fix it with regrexp_replace functon.
+
+c. Dropping bad data
+For each loan number, sicne they only have one borrower, so the borrower should only belong to one country and region. However, we find there are 3 records that they have wrong country. We will drop tme.
+
+d.Replacing null value with correct data
+We will replace null value of each column. The idea here is: since loan number is unique identifier, so for each loan number, it should have its specific values. so for each column that has null value, we create a dictniory that using loan number as key and that column as values. then, we filter out the records with null value and replace it's null value. Finally, we drop the records that are stil have null value for that column, because they are true missing value, which means for that loan number, we only have one record in this data and for its missing value, we can't do anything except drop it.  
+For details, you can go to Capstone Project Tempalte and review from there.
+
+e. Generate dataframe for dimensional and fact table
+For dimensional table, we will keep the loan number first for creating transaction table, then we will drop them.
+For fact table transaction, we will create it by joing log table with the other tables on loan number.
+
+C. Saving parquet file back to S3
+After all above, we save the data to s3 and complete our job. 
 If you want to display the file you saved on s3, you can run display_file_s3() function.
 If you want to look at the data you saved locally, you can go to Output folder and find them there.
 You can run Delete_All() function to delete all files you created locally.
- 
+
+D.Create Redshift on AWS with script
+By running Reshift.sh, you will create a redshift cluster with basic cofigure comes from dwh.cfg, by default, the configure is:
+DWH_CLUSTER_TYPE=multi-node
+DWH_NUM_NODES=4
+DWH_NODE_TYPE=dc2.large
+
+DWH_IAM_ROLE_NAME=dwhRole
+DWH_CLUSTER_IDENTIFIER=redshift
+DWH_DB=dwh
+DWH_DB_USER=dwhuser
+DWH_DB_PASSWORD=Passw0rd
+DWH_PORT=5439
+If you want to change it, you can edit dwh.cfg and put your own configure.
+
+
+E.
+
+F.
+
 Here are some tips for this project:
 loading time
 For etl_with_local_data.py, in process_song_data() function, I only loaded data/song_data/A/A/A/*.json. Also in process_log_data(), when we need to join with song tabes, I only used  data/song_data/A/A/A/*.json too. And this will take 30 seconds. If you want to load all data, you can uncomment the command in the function and you will be able to load all data.
