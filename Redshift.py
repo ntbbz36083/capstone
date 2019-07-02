@@ -1,5 +1,8 @@
 # Define a function that get basic config
 def get_config(configu_file):
+    """
+    This function will be responsible for getting the configration.
+    """
     # Load in the cofigure file
     config = configparser.ConfigParser()
     config.read_file(open(configu_file))
@@ -29,7 +32,9 @@ def get_config(configu_file):
 
 # Define a function that create object resource 
 def Create_Object_Resource(object_type, region_name_full, KEY, SECRET):
-    
+    """
+    This function will be responsible for creating the Object Resource.
+    """
     ob = boto3.resource(object_type,
                        region_name=region_name_full,
                        aws_access_key_id=KEY,
@@ -39,7 +44,9 @@ def Create_Object_Resource(object_type, region_name_full, KEY, SECRET):
 
 # Define a function that create object client 
 def Create_Object_Client(object_type, region_name_full, KEY, SECRET):
-    
+    """
+    This function will be responsible for creating the Object Client.
+    """
     ob = boto3.client(object_type,
                        region_name=region_name_full,
                        aws_access_key_id=KEY,
@@ -49,6 +56,9 @@ def Create_Object_Client(object_type, region_name_full, KEY, SECRET):
 
 # Define a function that get redshift cluster information and return it as a pandas dataframe
 def prettyRedshiftProps(props):
+    """
+    This function will be responsible for creating a dataframe that contains cluster's parameters.
+    """
     pd.set_option('display.max_colwidth', -1)
     keysToShow = ["ClusterIdentifier", "NodeType", "ClusterStatus", "MasterUsername", "DBName", "Endpoint", "NumberOfNodes", 'VpcId']
     x = [(k, v) for k,v in props.items() if k in keysToShow]
@@ -56,6 +66,9 @@ def prettyRedshiftProps(props):
 
 # Define a function thatcreate redshift cluster with configure
 def Create_Cluster(redshift, DWH_CLUSTER_TYPE, DWH_NODE_TYPE, DWH_NUM_NODES, DWH_DB, DWH_CLUSTER_IDENTIFIER, DWH_DB_USER, DWH_DB_PASSWORD, roleArn):
+    """
+    This function will be responsible for creating the cluster.
+    """
     redshift.create_cluster(        
         ClusterType=DWH_CLUSTER_TYPE,
         NodeType=DWH_NODE_TYPE,
@@ -90,11 +103,6 @@ def main():
     s3 = Create_Object_Resource('s3', 'us-west-2', KEY, SECRET)
     iam = Create_Object_Client('iam', 'us-west-2', KEY, SECRET)
     redshift = Create_Object_Client('redshift', 'us-west-2', KEY, SECRET)
-    
-    #ec2 = Create_Object_Resource('ec2', 'us-east-1', KEY, SECRET)
-    #s3 = Create_Object_Resource('s3', 'us-east-1', KEY, SECRET)
-    #iam = Create_Object_Client('iam', 'us-east-1', KEY, SECRET)
-    #redshift = Create_Object_Client('redshift', 'us-east-1', KEY, SECRET)
 
     #1.1 Create the role, 
     try:
@@ -127,32 +135,35 @@ def main():
     print("1.4 Creating Cluster")
 
     # Create cluster and return DWH_ENDPOINT and DWH_ROLE_ARN
-    Create_Cluster(redshift, DWH_CLUSTER_TYPE, DWH_NODE_TYPE, DWH_NUM_NODES, DWH_DB, DWH_CLUSTER_IDENTIFIER, DWH_DB_USER, DWH_DB_PASSWORD, roleArn)
-    myClusterProps = redshift.describe_clusters(ClusterIdentifier=DWH_CLUSTER_IDENTIFIER)['Clusters'][0]
-    cluster_status = prettyRedshiftProps(myClusterProps)
-    if cluster_status.iloc[2,1] =='available':
-        print('Cluster is available now!')
-        DWH_ENDPOINT = myClusterProps['Endpoint']['Address']
-        DWH_ROLE_ARN = myClusterProps['IamRoles'][0]['IamRoleArn']
-        print("DWH_ENDPOINT :: ", DWH_ENDPOINT)
-        print("DWH_ROLE_ARN :: ", roleArn)
-        else:    
-            flag = True
-            i= 0
-            while flag:
-                myClusterProps = redshift.describe_clusters(ClusterIdentifier=DWH_CLUSTER_IDENTIFIER)['Clusters'][0]
-                cluster_status = prettyRedshiftProps(myClusterProps)
-                if cluster_status.iloc[2,1] =='creating':
-                    print('We are still working on creating the cluster, approximate {}/20 done!'.format(i))
-                    i += 1
-                    time.sleep(30)
-                    else:
-                        flag = False
-                        print('cluster is available!')    
-                        DWH_ENDPOINT = myClusterProps['Endpoint']['Address']
-                        DWH_ROLE_ARN = myClusterProps['IamRoles'][0]['IamRoleArn']
-                        print("DWH_ENDPOINT :: ", DWH_ENDPOINT)
-                        print("DWH_ROLE_ARN :: ", roleArn)
+    x = redshift.describe_clusters()['Clusters']
+    if not x: 
+        Create_Cluster(redshift, DWH_CLUSTER_TYPE, DWH_NODE_TYPE, DWH_NUM_NODES, DWH_DB, DWH_CLUSTER_IDENTIFIER, DWH_DB_USER, DWH_DB_PASSWORD, roleArn)
+        flag = True
+        i= 0
+        while flag:
+            myClusterProps = redshift.describe_clusters(ClusterIdentifier=DWH_CLUSTER_IDENTIFIER)['Clusters'][0]
+            cluster_status = prettyRedshiftProps(myClusterProps)
+            if cluster_status.iloc[2,1] =='creating':
+                print('We are still working on creating the cluster, approximate {}/20 done!'.format(i))
+                i += 1
+                time.sleep(30)
+            else:
+                flag = False
+                print('cluster is already available!')    
+                DWH_ENDPOINT = myClusterProps['Endpoint']['Address']
+                DWH_ROLE_ARN = myClusterProps['IamRoles'][0]['IamRoleArn']
+                print("DWH_ENDPOINT :: ", DWH_ENDPOINT)
+                print("DWH_ROLE_ARN :: ", roleArn)
+    else:
+        myClusterProps = redshift.describe_clusters(ClusterIdentifier=DWH_CLUSTER_IDENTIFIER)['Clusters'][0]
+        cluster_status = prettyRedshiftProps(myClusterProps)
+        if cluster_status.iloc[2,1] =='available':
+            print('Cluster is available now!')
+            DWH_ENDPOINT = myClusterProps['Endpoint']['Address']
+            DWH_ROLE_ARN = myClusterProps['IamRoles'][0]['IamRoleArn']
+            print("DWH_ENDPOINT :: ", DWH_ENDPOINT)
+            print("DWH_ROLE_ARN :: ", roleArn)
+            
 
 
     try:
