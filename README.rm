@@ -1,17 +1,23 @@
-No null in country related columns
-loan-number should have a 9 digits pattern, like IBRD + 11111, however, we have 6(IBRD + 11),7(IBRD + 111),8(IBRD + 1111) digits column. To fix this, we need to add the lacking number of 0 after IBRD. For example, if it is (IBRD + 11), we need to add 3 0 and it will become IBRD00011, which is correct format.
-
-For project_id, there are 30000+ null value
-
-351669, half of Last_Disbursement_Date is missing, drop it.
-
-Step 1: Scope the Project and Gather Dat
 Project summary
+
 1. Introduction
 
-A loan company, IB, wants to move their processes and data pipeline onto the cloud. Their data resides in S3, in a directory of CSV on the transcation history of the loans. 
+International Bank for Reconstruction and Development, wants to move their processes and data pipeline onto the cloud. Their data resides in S3, in a directory of CSV on the transcation history of the loans. 
 
 In this project, we will build an ETL pipeline that extracts data from S3, processes and clean them using Spark, and loads the data back into S3 as a set of dimensional tables in parquet format. Then, create cluster with redshift and load data into redshift. This will allow our analytics team to continue finding insights of our loan users.
+
+The project follows the follow steps:
+* Step 1: Scope the Project and Gather Data
+* Step 2: Explore and Assess the Data
+* Step 3: Clean and Save the Data
+* Step 3: Define the Data Model
+* Step 4: Run ETL to Model the Data
+* Step 5: Complete Project Write Up
+
+The data is coming from World Bank and you can download it from below page:
+
+https://finances.worldbank.org/Loans-and-Credits/IBRD-Statement-Of-Loans-Historical-Data/zucq-nrc3
+It is around 300mb and below is the data layout of the file.
 
 2. File Description 
 In this repository, you will see Test.ipynb, csp.cfg, etl.py, README.md.
@@ -23,13 +29,17 @@ README.md: a description of this project.
 3. Project Description
 The data lake we created for this project has 6 tables: 1 fact table and 5 dimension tables
 Fact table: 
-transaction - records in transactions, columns have Loan_Number, Time_Id, Country_Id, Guarantor_Country_Id, Loan_Type, Loan_Status_Id, Amount_Id, End_of_Period, Interest_Rate, Project_ID, Exchange_Adjustment, Borrowers_Obligation, Cancelled_Amount,Undisbursed_Amount, Disbursed_Amount, Repaid_to_IBRD, Due_to_IBRD, l.Loans_Held
+Transaction - records in transactions, columns have Loan_Number, Time_Id, Country_Id, Guarantor_Country_Id, Loan_Type, Loan_Status_Id, Amount_Id, End_of_Period, Interest_Rate, Project_ID, Exchange_Adjustment, Borrowers_Obligation, Cancelled_Amount,Undisbursed_Amount, Disbursed_Amount, Repaid_to_IBRD, Due_to_IBRD, Loans_Held
 Dimension tables: 
 country - country that has loan or as a Guarantor in the transaction history, columns have Country_Id, Country_Code, Country, Region
-loan_status - loan status in transaction history, columns have song_id, title, artist_id, year, duration
-loan_type - loan type in transaction history, columns have artist_id, name, location, lattitude, longitude
+loan_status - loan status in transaction history, columns have Loan_Status_Id, Loan_Status
+loan_type - loan type in transaction history, columns have Loan_Type_Id, Loan_Type
 amount - different amounts in transaction history, columns have Amount_Id, Original_Principal_Amount, Sold_3rd_Party, Repaid_3rd_Party, Due_3rd_Party
 time - columns have timestamps of records in transaction history, columns have Time_Id, First_Repayment_Date, Last_Repayment_Date, Agreement_Signing_Date
+
+Data dictionary 
+Every column is coming from the raw data except those unique IDs. For data layout, please see Data Layout.txt file in workspace.
+
 
 4. ETL Pipeline 
 For the ETL pipeline, there are 6 phrases:
@@ -38,7 +48,7 @@ B.Creating and cleaning data with spark.
 C.Saving parquet file back to S3. 
 D.Create Redshift on AWS with script.
 E.Load data into redshift from S3.
-F.Create tables with proper data type and load data into tables.
+F.Data qulity check.
 
 To start review this project, please open and run Test.ipynb step by step.
 
@@ -88,22 +98,48 @@ DWH_DB_PASSWORD=Passw0rd
 DWH_PORT=5439
 If you want to change it, you can edit dwh.cfg and put your own configure.
 
+E.Load data into redshift from S3
+Inside etl.py, we will connect to redshift first, then I creat drop_tables(), create_tables(),change_timestamp() and load_tables() functions. Each of these functions will loop through a list of sql statement to drop, create and load tables. These sql queries are stored inside sql_queries.py and theey are: copy_table_queries, drop_table_queries, create_table_queries, insert_table_queries and drop_staging_table_queries.
+copy_table_queries has the queries that contains copy commands.
+drop_table_queries has the queries that will drp table if it exists.
+create_table_queries has the queries that will create table with exptected data type.
+insert_table_queries has the queries that will change the data type of date related columns to timestamp.
+drop_staging_table_queries has the queries that will drop the staging table.
 
-E.
+F.Data Quality Check
+From here, we will first check Integrity constraints on the relational database (e.g., unique key, data type, etc.)
+Then, we will count on each table to make sure there's no empty table. This ensures that the scripts are doing the right things.
+Last, we will compare the counts between target table and spark dataframe to ensure data is loaded correctly.
 
-F.
 
-Here are some tips for this project:
-loading time
-For etl_with_local_data.py, in process_song_data() function, I only loaded data/song_data/A/A/A/*.json. Also in process_log_data(), when we need to join with song tabes, I only used  data/song_data/A/A/A/*.json too. And this will take 30 seconds. If you want to load all data, you can uncomment the command in the function and you will be able to load all data.
+Finally, everything is inside redshift and we can start querying them to pull more insights from the data!
 
-For etl.py, in process_song_data() function, I only loaded data/song_data/A/A/A/*.json. Also in process_log_data(), when we need to join with song tabes, I only used  data/song_data/A/A/A/*.json too. And this will take 150 seconds. If you want to load all data, you can uncomment the command in the function and you will be able to load all data.
+Please remember to drop the cluster and role when you finished.
 
-I tried to load all songs data into the data lake, however, it is too long for s3 since it contains 17000+ files, for local it is not that long, since song data only has 72 files.  
+5. Project Write Up
 
-One issue:
-In the last step of process_log_file function, in the comment we have "write songplays table to parquet files partitioned by year and month", however, we can't do this since this table doesn't have these 2 columns, not sure whether this is a typo.
-Step 2: Explore and Assess the Data
-Step 3: Define the Data Model
-Step 4: Run ETL to Model the Data
-Step 5: Complete Project Write Up
+Rationale for the choice of tools and technologies for the project.
+
+In this project, I choose AWS S3, Redshift, Spark as my tools since these are really good tools to handle big data in cloud enviroment.
+
+AWS S3: a well-known file system, which supports a lot of file type and provides great enough API that we can easily meet our file transfer requirement.
+
+AWS Redshift: a convenient tool, which is built on massive parallel processing data warehouse. It has different types of database and can handle large scale data sets. The most important benefit is its sscalability.  
+
+PySpark: easy to learn and implement and provides simple and comprehensive API. It also comes with a wide range of libraries like numpy, pandas, scikit-learn, seaborn, matplotlib etc.
+It is backed up by a huge and active community.
+
+Below are some scenarios that we might encounter in the future.
+1.The data was increased by 100x.
+
+If the data was increased by 100x, we will have 2 ways to deal with it.
+a.Ungrade the AWS Redshift and EC2 so we will more compute power. This is easier way, however, it will cost more.
+b.Partition the data with Loan Number and process eahc chunk in parallel.
+
+2.The data populates a dashboard that must be updated on a daily basis by 7am every day.
+
+We can use airflow to create a dag to take care of the scheduling. This is also a further step I want to work on for this project.
+
+3.The database needed to be accessed by 100+ people.
+
+We can create different users and roles in AWS IAM and assign access to different user different roles.
