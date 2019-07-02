@@ -1,0 +1,65 @@
+Data Layout
+##### End of PeriodEnd of Period Date 
+represents the date as of which balances are shown in the report.
+##### Loan Number
+For IBRD loans and IDA credits or grants a loan number consists of the organization prefix (IBRD/IDA) and a five-character label that uniquely identifies the loan within the organization. In IDA, all grant labels start with the letter ‘H’.
+#####  RegionCountry 
+lending is grouped into regions based on the current World Bank administrative (rather than geographic) region where project implementation takes place. The Other Region is used for loans to the IFC.
+##### Country Code
+Country Code according to the World Bank country list. Might be different from the ISO country code.
+##### Country
+Country to which loan has been issued. Loans to the IFC are included under the country “World”.
+##### Borrower
+The representative of the borrower to which the Bank loan is made.
+##### Guarantor Country 
+CodeCountry Code of the Guarantor according to the World Bank country list. Might be different from the ISO country code.
+##### Guarantor
+The Guarantor guarantees repayment to the Bank if the borrower does not repay.
+##### Loan 
+TypeA type of loan/loan instrument for which distinctive accounting and/or other actions need to be performed. See Data Dictionary attached in the About section or Data Dictionary dataset available from the list of all datasets for details.
+##### Loan StatusStatus of the loan. 
+See Data Dictionary attached in the About section or Data Dictionary dataset available from the list of all datasets for status descriptions.
+##### Interest Rate
+Current Interest rate or service charge applied to loan. For loans that could have more than one interest rate (e.g. FSL or SCL fixed rate loans), the interest rate is shown as “0”.
+##### Currency of Commitment
+The currency in which a borrower’s loan, credit, grant or trust fund is denominated.
+##### Project 
+IDA Bank project is referenced by a project ID (Pxxxxxxx). More than one loan or credit may be associated with one Project ID.
+##### Project Name 
+Short descriptive project name.
+##### Original Principal Amount
+The original US dollar amount of the loan that is committed and approved.
+##### Cancelled Amount
+The portion of the undisbursed balance which has been cancelled (i.e. no longer available for future disbursement). Cancellations include terminations (where approved loan agreements were never signed).
+##### Undisbursed Amount
+The amount of a loan commitment that is still available to be drawn down. These currency amounts have been converted to US dollars at the exchange rates applicable at the end of period date.
+##### Disbursed Amount
+The amount that has been disbursed from a loan commitment in equivalent US dollars, calculated at the exchange rate on the value date of the individual disbursements.
+##### Repaid to IBRD
+Total principal amounts paid or prepaid to IBRD in US dollars, calculated at the exchange rate on the value date of the individual repayments.
+##### Due to IBRD
+Where the exchange adjustment is shown separately, this is the amount disbursed and outstanding expressed as a stock of debt in historical US Dollars. Where the exchange adjustment is not shown separately, this is the amount due and outstanding as of th
+##### Exchange Adjustment
+The increase (decrease) in value of disbursed and outstanding amount due to exchange rate fluctuations. This amount added to “Due to IBRD” yields “Borrower’s Obligation; includes exchange adjustments on the amounts Due to 3rd parties.
+##### Borrower's Obligation
+The Borrower Obligation is the outstanding balance for the loan as of the end of period date in US dollars equivalent. The Borrower's Obligation includes the amounts outstanding Due to 3rd parties.
+##### Sold 3rd Party
+Portion of loan sold to a third party.
+Repaid 3rd PartyAmount repaid to a third party.
+##### Due 3rd Party
+Amount due to a third party.
+Loans HeldThe sum of the disbursed and outstanding amounts (net of repayments, i.e. Due to IBRD/IDA) plus undisbursed available amounts expressed in historical US Dollars.
+##### First Repayment Date
+The date on which principal repayment starts.
+##### Last Repayment Date
+The date specified in the loan/credit agreement (amended for any partial prepayments) on which the last principal installment must be repaid by the Borrower.
+##### Agreement Signing Date
+The date the borrower and the Bank sign the loan agreement.
+##### Board Approval Date
+The date the World Bank approves the loan.
+##### Effective Date (Most Recent)
+The date on which a legal agreement becomes effective, or is expected to become effective.
+##### Closed Date (Most Recent)
+The date specified in the legal agreement (or extension) after which the Bank may, by notice to the borrower, terminate the right to make withdrawals from the loan account.
+##### Last Disbursement Date
+The date on which the last disbursement was made (prior to the end of period date).
