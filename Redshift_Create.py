@@ -124,7 +124,7 @@ def main():
     print("1.2 Attaching Policy")
 
     iam.attach_role_policy(RoleName=DWH_IAM_ROLE_NAME,
-                       PolicyArn="arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
+                       PolicyArn="arn:aws:iam::aws:policy/AmazonS3FullAccess"
                       )['ResponseMetadata']['HTTPStatusCode']
 
     print("1.3 Get the IAM role ARN")
