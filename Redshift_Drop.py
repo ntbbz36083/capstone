@@ -81,16 +81,11 @@ def main():
     Drop_Cluster(redshift, DWH_CLUSTER_IDENTIFIER)
     myClusterProps = redshift.describe_clusters(ClusterIdentifier=DWH_CLUSTER_IDENTIFIER)['Clusters'][0]
     cluster_status = prettyRedshiftProps(myClusterProps)
-    while cluster_status.iloc[2,1] =='deleting':
+    while redshift.describe_clusters()['Clusters']:
         print('We are still working on deleting the cluster!')
         time.sleep(60)
-        myClusterProps = redshift.describe_clusters(ClusterIdentifier=DWH_CLUSTER_IDENTIFIER)['Clusters'][0]
-        cluster_status = prettyRedshiftProps(myClusterProps)
-        if not redshift.describe_clusters()['Clusters']:
-            break
     print ('Cluster is dropped, please go ahead!')
-    
-    iam.detach_role_policy(RoleName=DWH_IAM_ROLE_NAME, PolicyArn="arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess")
+    iam.detach_role_policy(RoleName=DWH_IAM_ROLE_NAME, PolicyArn="arn:aws:iam::aws:policy/AmazonS3FullAccess")
     iam.delete_role(RoleName=DWH_IAM_ROLE_NAME)
     print('Role is dropped, please go ahead!')
 if __name__ == "__main__":
