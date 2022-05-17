@@ -1,6 +1,5 @@
 import configparser
 
-print("hello world")
 # CONFIG
 config = configparser.ConfigParser()
 config.read('dwh.cfg')
@@ -19,11 +18,11 @@ staging_transaction_table_drop = "DROP TABLE IF EXISTS staging_transaction;"
 
 # CREATE TABLES
 
-amount_table_create= ("""create table if not exists amount (
+amount_table_create = ("""create table if not exists amount (
 Amount_Id INTEGER PRIMARY KEY,
-Original_Principal_Amount float, 
-Sold_3rd_Party float, 
-Repaid_3rd_Party float, 
+Original_Principal_Amount float,
+Sold_3rd_Party float,
+Repaid_3rd_Party float,
 Due_3rd_Party float
 );
 """)
@@ -44,15 +43,15 @@ Loan_Status_Id INTEGER PRIMARY KEY
 
 loan_type_table_create = ("""create table if not exists loan_type (
 Loan_Type VARCHAR(50),
-Loan_Type_Id INTEGER PRIMARY KEY 
+Loan_Type_Id INTEGER PRIMARY KEY
 );
 """)
 
 transaction_table_create = ("""create table if not exists transaction (
-Loan_Number VARCHAR(50) PRIMARY KEY, 
-Time_Id integer, 
-Country_Id integer, 
-Guarantor_Country_Id INTEGER, 
+Loan_Number VARCHAR(50) PRIMARY KEY,
+Time_Id integer,
+Country_Id integer,
+Guarantor_Country_Id INTEGER,
 Loan_Type VARCHAR(50),
 Loan_Status_Id integer,
 Amount_Id integer,
@@ -71,10 +70,10 @@ Loans_Held float
 """)
 
 staging_transaction_table_create = ("""create table if not exists staging_transaction (
-Loan_Number VARCHAR(50) PRIMARY KEY, 
-Time_Id integer, 
-Country_Id integer, 
-Guarantor_Country_Id INTEGER, 
+Loan_Number VARCHAR(50) PRIMARY KEY,
+Time_Id integer,
+Country_Id integer,
+Guarantor_Country_Id INTEGER,
 Loan_Type VARCHAR(50),
 Loan_Status_Id integer,
 Amount_Id integer,
@@ -93,7 +92,7 @@ Loans_Held float
 """)
 
 staging_time_table_create = ("""create table if not exists staging_time (
-Time_Id INTEGER PRIMARY KEY, 
+Time_Id INTEGER PRIMARY KEY,
 First_Repayment_Date VARCHAR(50),
 Last_Repayment_Date VARCHAR(50),
 Agreement_Signing_Date VARCHAR(50),
@@ -104,7 +103,7 @@ Closed_Date_Most_Recent VARCHAR(50)
 """)
 
 time_table_create = ("""create table if not exists time (
-Time_Id INTEGER PRIMARY KEY, 
+Time_Id INTEGER PRIMARY KEY,
 First_Repayment_Date TIMESTAMP,
 Last_Repayment_Date TIMESTAMP,
 Agreement_Signing_Date TIMESTAMP,
@@ -119,32 +118,32 @@ Closed_Date_Most_Recent TIMESTAMP
 loan_type_copy = ("""copy loan_type from {}
 credentials 'aws_iam_role={}'
 CSV;
-""").format(config.get('S3','Loan_type_DATA'), config.get('IAM_ROLE','ARN'))
+""").format(config.get('S3', 'Loan_type_DATA'), config.get('IAM_ROLE', 'ARN'))
 
 staging_transaction_copy = ("""copy staging_transaction from {}
 credentials 'aws_iam_role={}'
 CSV;
-""").format(config.get('S3','Transaction_DATA'), config.get('IAM_ROLE','ARN'))
+""").format(config.get('S3', 'Transaction_DATA'), config.get('IAM_ROLE', 'ARN'))
 
 country_copy = ("""copy country from {}
 credentials 'aws_iam_role={}'
 CSV;
-""").format(config.get('S3','Country_DATA'), config.get('IAM_ROLE','ARN'))
+""").format(config.get('S3', 'Country_DATA'), config.get('IAM_ROLE', 'ARN'))
 
 loan_status_copy = ("""copy loan_status from {}
 credentials 'aws_iam_role={}'
 CSV;
-""").format(config.get('S3','Loan_status_DATA'), config.get('IAM_ROLE','ARN'))
+""").format(config.get('S3', 'Loan_status_DATA'), config.get('IAM_ROLE', 'ARN'))
 
 staging_time_copy = ("""copy staging_time from {}
 credentials 'aws_iam_role={}'
 CSV;
-""").format(config.get('S3','Time_DATA'), config.get('IAM_ROLE','ARN'))
+""").format(config.get('S3', 'Time_DATA'), config.get('IAM_ROLE', 'ARN'))
 
 amount_copy = ("""copy amount from {}
 credentials 'aws_iam_role={}'
 CSV;
-""").format(config.get('S3','Amount_DATA'), config.get('IAM_ROLE','ARN'))
+""").format(config.get('S3', 'Amount_DATA'), config.get('IAM_ROLE', 'ARN'))
 
 # INSERT TABLES
 
@@ -162,8 +161,12 @@ from staging_transaction;
 
 # QUERY LISTS
 
-create_table_queries = [amount_table_create, country_table_create, loan_status_table_create, loan_type_table_create, transaction_table_create, time_table_create, staging_time_table_create, staging_transaction_table_create]
-drop_table_queries = [amount_table_drop, country_table_drop, loan_status_table_drop, loan_type_table_drop, transaction_table_drop, time_table_drop, staging_time_table_drop, staging_transaction_table_drop]
-copy_table_queries = [staging_transaction_copy, loan_type_copy, country_copy, loan_status_copy, staging_time_copy, amount_copy]
+create_table_queries = [amount_table_create, country_table_create, loan_status_table_create, loan_type_table_create,
+                        transaction_table_create, time_table_create, staging_time_table_create, staging_transaction_table_create]
+drop_table_queries = [amount_table_drop, country_table_drop, loan_status_table_drop, loan_type_table_drop,
+                      transaction_table_drop, time_table_drop, staging_time_table_drop, staging_transaction_table_drop]
+copy_table_queries = [staging_transaction_copy, loan_type_copy,
+                      country_copy, loan_status_copy, staging_time_copy, amount_copy]
 insert_table_queries = [time_table_insert, transaction_table_insert]
-drop_staging_table_queries = [staging_time_table_drop,staging_transaction_table_drop]
+drop_staging_table_queries = [
+    staging_time_table_drop, staging_transaction_table_drop]
